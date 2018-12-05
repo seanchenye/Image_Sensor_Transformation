@@ -85,7 +85,7 @@ public class imgMath {
     }
 
     public static double[][] rotateMat_55(double[][] m, char axis, double angle){
-        System.out.println("rotateMat:   angle:   " + Math.toDegrees(angle));
+        //System.out.println("rotateMat:   angle:   " + Math.toDegrees(angle));
 
         switch(axis) {
 
@@ -96,7 +96,7 @@ public class imgMath {
                                 {0, Math.sin(angle), Math.cos(angle), 0, 0},
                                 {0, 0, 0, 1, 0},
                                 {0, 0, 0, 0, 1}}, m);
-                System.out.println("rotateMat: enter case x");
+                //System.out.println("rotateMat: enter case x");
                 break;
             case 'y':
                 m = matMul(new double[][]
@@ -105,7 +105,7 @@ public class imgMath {
                                 {-Math.sin(angle), 0, Math.cos(angle), 0, 0},
                                 {0, 0, 0, 1, 0},
                                 {0, 0, 0, 0, 1}}, m);
-                System.out.println("rotateMat: enter case y");
+                //System.out.println("rotateMat: enter case y");
                 break;
             case 'z':
                 m = matMul(new double[][]
@@ -114,7 +114,7 @@ public class imgMath {
                                 {0, 0, 1, 0, 0},
                                 {0, 0, 0, 1, 0},
                                 {0, 0, 0, 0, 1}}, m);
-                System.out.println("rotateMat: enter case z");
+                //System.out.println("rotateMat: enter case z");
                 break;
         }
         return m;
