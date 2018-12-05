@@ -1,5 +1,6 @@
 package com.example.yash.image;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.BitmapShader;
 import android.graphics.Canvas;
@@ -11,6 +12,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
@@ -24,13 +26,22 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 
 import com.example.yash.image.filter.HSBAdjustFilter;
+import com.example.yash.image.filter.filter;
 import com.github.tbouron.shakedetector.library.ShakeDetector;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -68,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-                        String magentic = "磁场\n" + "X：" + event.values[0] + "\n" + "Y:"
+                        String magentic = "Magnetic Field\n" + "X：" + event.values[0] + "\n" + "Y:"
                             + event.values[1] + "\n" + "Z:" + event.values[2] + "\n";
                     float x = event.values[0];
                     float y = event.values[1];
@@ -78,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
 
 
                     float expectedMag = 50;
-                    if (mag > 1.4*expectedMag || mag < 0.6*expectedMag) {
+                    if (mag > 1.8*expectedMag || mag < 0.2*expectedMag) {
                             Toast.makeText(getApplicationContext(),magentic, Toast.LENGTH_SHORT).show();
                             Drawable d = imageView.getDrawable();
                             d = convertToGrayscale(d);
@@ -112,9 +123,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void OnShake() {
                 Toast.makeText(getApplicationContext(), "Device shaken!", Toast.LENGTH_SHORT).show();
-                Drawable d = imageView.getDrawable();
-                d.setColorFilter(new ColorMatrixColorFilter(HSBAdjustFilter.filterRGB(Math.PI/4, 1, 1)));
-                imageView.setImageDrawable(d);
+
+                //Drawable d = imageView.getDrawable();
+                imageView.buildDrawingCache();
+                Bitmap imageToSave = imageView.getDrawingCache();
+
+                Bitmap newImg = filter.random(imageToSave);
+
+                imageView.setImageBitmap(newImg);
             }
         });
 
@@ -172,16 +188,74 @@ public class MainActivity extends AppCompatActivity {
         ShakeDetector.destroy();
     }
 
-    public void toRandom(View v){
-        Drawable d = imageView.getDrawable();
-        d.setColorFilter(new ColorMatrixColorFilter(HSBAdjustFilter.filterRGB(Math.PI/4, 1, 1)));
-        imageView.setImageDrawable(d);
+    public void resetPhoto(View v){
+        if(path.length()>1)
+            imageView.setImageDrawable(Drawable.createFromPath(path));
     }
 
-    public void cvtBlack(View v){
-        Drawable d = imageView.getDrawable();
-        d = convertToGrayscale(d);
-        imageView.setImageDrawable(d);
+
+    public void savePhoto(View v) throws IOException {
+        if(path.length()>1) {
+            imageView.buildDrawingCache();
+            Bitmap imageToSave = imageView.getDrawingCache();
+
+            createDirectoryAndSaveFile(imageToSave);
+
+            Toast.makeText(getApplicationContext(), "Saved to Sensor folder", Toast.LENGTH_LONG).show();
+
+        }
+    }
+
+    private void createDirectoryAndSaveFile(Bitmap imageToSave) {
+        String fileName = makePhotoPath();
+        File direct = new File(Environment.getExternalStorageDirectory() + "/Sensor");
+
+        if (!direct.exists()) {
+            File wallpaperDirectory = new File(Environment.getExternalStorageDirectory() + "/Sensor");
+            wallpaperDirectory.mkdirs();
+        }
+
+        File file = new File(new File(Environment.getExternalStorageDirectory() + "/Sensor"), fileName);
+        if (file.exists()) {
+            file.delete();
+        }
+        try {
+            FileOutputStream out = new FileOutputStream(file);
+            imageToSave.compress(Bitmap.CompressFormat.JPEG, 100, out);
+            out.flush();
+            out.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private String makePhotoPath(){
+            @SuppressLint("SimpleDateFormat") SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
+            String currentDateandTime = sdf.format(new Date());
+            return "Sensor_" + currentDateandTime+".jpg";
+    }
+
+    private Bitmap drawableToBitmap (Drawable drawable) {
+        Bitmap bitmap = null;
+
+        if (drawable instanceof BitmapDrawable) {
+            BitmapDrawable bitmapDrawable = (BitmapDrawable) drawable;
+            if(bitmapDrawable.getBitmap() != null) {
+                return bitmapDrawable.getBitmap();
+            }
+        }
+
+        if(drawable.getIntrinsicWidth() <= 0 || drawable.getIntrinsicHeight() <= 0) {
+            bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888); // Single color bitmap will be created of 1x1 pixel
+        } else {
+            bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        }
+
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+        return bitmap;
     }
 
 
@@ -209,11 +283,6 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
-
-
-
-
     protected Drawable convertToGrayscale(Drawable drawable) {
         ColorMatrix matrix = new ColorMatrix();
         matrix.setSaturation(0);
@@ -227,15 +296,10 @@ public class MainActivity extends AppCompatActivity {
 
 
     protected Drawable randomFiler(Drawable drawable){
-
         return null;
     }
 
-
-
     protected Drawable magneticFilter(Bitmap source){
-
-
         return null;
     }
 
