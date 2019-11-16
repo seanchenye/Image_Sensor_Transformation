@@ -227,11 +227,12 @@ public class MainActivity extends AppCompatActivity {
      */
     public void savePhoto(View v) throws IOException {
         if(path.length()>1) {
+            imageView.setDrawingCacheEnabled(true);
             imageView.buildDrawingCache();
             Bitmap imageToSave = imageView.getDrawingCache();
 
             createDirectoryAndSaveFile(imageToSave);
-
+            imageView.setDrawingCacheEnabled(false);
             Toast.makeText(getApplicationContext(), "Saved to Sensor folder", Toast.LENGTH_LONG).show();
 
         }
